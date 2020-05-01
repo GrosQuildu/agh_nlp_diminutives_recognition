@@ -21,15 +21,28 @@ Diminutives:
 - 'Kawki'
 - 'herbatki'
 
-$ echo 'Jajeczko' | rozpoznawaczek -v
-Parsing line: 'Jajeczko'
-Probability for `Jajeczko` (Jajeczko, jajeczko, subst:sg:nom.acc.voc:n:ncol)
+$ echo 'Jajeczkami' | rozpoznawaczek -v
+Parsing line: 'Jajeczkami'
+Probability for `Jajeczkami` (Jajeczkami, jajeczko, subst:pl:inst:n:ncol)
+    -> Matched against Paweł Miczko
+    -> rzeczownik
+        -> liczba mnoga
+    -> Not matched against Długosz
+    -> re-running checks for lemma!
+~*~*~*~*~*
+Probability for `jajeczko` (jajeczko, jajeczko, subst:sg:nom.acc.voc:n:ncol)
+    -> Matched against Paweł Miczko
     -> rzeczownik
         -> liczba pojedyncza
         -> rodzaj nijaki
+    -> Matched against Długosz
+    -> Not matched against GPDK
     -> probability: 0.666667
+~*~*~*~*~*
+    -> Not matched against GPDK
+    -> probability: 0.500000
 Diminutives:
-- 'Jajeczko'
+- 'Jajeczkami'
 ```
 
 ## Algorith

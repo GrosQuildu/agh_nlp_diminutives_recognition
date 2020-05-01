@@ -101,7 +101,7 @@ GRAM_CATEGORY = defaultdict(lambda: 'nieznane', {
 # fmt: on
 
 # Paulina Biały – Polish and English Diminutives in Literary Translation: Pragmatic and Cross-Cultural Perspectives
-# Długosz - nouns
+# Długosz - nouns, differentiate gender and grammatical number
 suf_dlugosz_noun_masculine = {'ak', 'ek',
                               'uszek', 'aszek', 'ątek', 'ik', 'yk', 'czyk'}
 suf_dlugosz_noun_feminine = {'ka', 'eczka',
@@ -130,13 +130,14 @@ suf_miczko_general = {'czek', 'szek', 'szki', 'czyk', 'czko', 'eńki', 'sio', 's
 DIMINUTIVE_PROBABILITY_TRESHOLD = 0.4
 
 
-def has_diminutive_suffix(word, suffixes):
+def has_diminutive_suffix(word, suffixes, set_name=None):
     """
     Check if the word ends with any of the provided suffixes
 
     Args:
         word(str)
         suffixes(set(str))
+        set_name(str/None)
 
     Returns:
         bool
@@ -147,11 +148,16 @@ def has_diminutive_suffix(word, suffixes):
     # do checking
     for suffix in suffixes:
         if word.endswith(suffix):
+            if set_name:
+                L.debug('    -> Matched against %s', set_name)
             return True
+
+    if set_name:
+        L.debug('    -> Not matched against %s', set_name)
     return False
 
 
-def diminutive_probability(word, segment):
+def diminutive_probability(word, segment, allows_rerun=True):
     """
     Probability of `word` being diminutive, given its morfological analysis
     
@@ -161,6 +167,7 @@ def diminutive_probability(word, segment):
     Args:
         word(str)
         segment(tuple(start_segment, end_segment, morfology interpretation))
+        allows_rerun(bool): for recursive calls
 
     Returns:
         bool
@@ -169,6 +176,7 @@ def diminutive_probability(word, segment):
     text_form, lemma, morfology_marker, ordinariness, stylistic_qualifiers = word_morfology
 
     # "rozpodabniacze", because words can have completely different meanings
+    # f.e. kot:s1 == animal, kot:s2 == young soldier
     lemma = lemma.split(':')[0]
 
     L.debug('Probability for `%s` (%s, %s, %s)',
@@ -200,7 +208,7 @@ def diminutive_probability(word, segment):
     if is_noun or is_adjective or is_unknown:
         # Paweł Miczko
         number_of_checks += 1
-        if has_diminutive_suffix(lemma, suf_miczko_general):
+        if has_diminutive_suffix(lemma, suf_miczko_general, 'Paweł Miczko'):
             number_of_matches += 1
 
     # noun only suffixes
@@ -228,6 +236,7 @@ def diminutive_probability(word, segment):
         # liczba pojedyncza
         if gramm_number == 'sg':
             L.debug('        -> liczba pojedyncza')
+
             if gender:
                 # męski
                 if gender.startswith('m'):
@@ -247,25 +256,45 @@ def diminutive_probability(word, segment):
                     suffixes_to_check.update(
                         suf_dlugosz_noun_plural_and_plurale_tantum)
 
-        # liczba mnoga
-        elif gramm_number:
-            L.debug('        -> liczba mnoga')
-            suffixes_to_check.update(
-                suf_dlugosz_noun_plural_and_plurale_tantum)
+            # check lemma, as it always is plural
+            number_of_checks += 1
+            if has_diminutive_suffix(lemma, suffixes_to_check, 'Długosz'):
+                number_of_matches += 1
 
-        # plurale tantum (TODO, nie wiem co to "plurale tantum" :D)
-        if subgender == 'pt':
-            L.debug('        -> plurale tantum')
-            suffixes_to_check.update(
-                suf_dlugosz_noun_plural_and_plurale_tantum)
+        else:
+            # liczba mnoga
+            if gramm_number:
+                L.debug('        -> liczba mnoga')
+                word_to_match = word
+                suffixes_to_check.update(
+                    suf_dlugosz_noun_plural_and_plurale_tantum)
 
-        number_of_checks += 1
-        if has_diminutive_suffix(lemma, suffixes_to_check):
-            number_of_matches += 1
+            # plurale tantum
+            elif subgender == 'pt':
+                L.debug('        -> plurale tantum')
+                word_to_match = word
+                suffixes_to_check.update(
+                    suf_dlugosz_noun_plural_and_plurale_tantum)
+
+            # check original word, not lemma, because lemma is plural
+            number_of_checks += 1
+            if has_diminutive_suffix(word, suffixes_to_check, 'Długosz'):
+                number_of_matches += 1
+
+            # run checks for pluralized lemma
+            if allows_rerun and lemma.lower() != word.lower():
+                L.debug('    -> re-running checks for lemma!')
+                L.debug('~*'*5)
+                number_of_checks += 1
+                morf = morfeusz2.Morfeusz(whitespace=morfeusz2.SKIP_WHITESPACES)
+                lemma_segments = morf.analyse(lemma)
+                if is_diminutive(lemma, lemma_segments, allows_rerun=False):
+                    number_of_matches += 1
+                L.debug('~*'*5)
 
         # Grzegorczykowa and Puzynina, Dobrzyński, Kaczorowska
         number_of_checks += 1
-        if has_diminutive_suffix(lemma, suf_gpdk_noun):
+        if has_diminutive_suffix(lemma, suf_gpdk_noun, 'GPDK'):
             number_of_matches += 1
 
     # adjective only suffixes
@@ -273,7 +302,7 @@ def diminutive_probability(word, segment):
         L.debug('    -> przymiotnik')
         # Grzegorczykowa
         number_of_checks += 1
-        if has_diminutive_suffix(lemma, suf_grzeg_adjectives):
+        if has_diminutive_suffix(lemma, suf_grzeg_adjectives, 'Grzegorczykowa'):
             number_of_matches += 1
 
     # we care only about nouns and adjectives
@@ -287,7 +316,7 @@ def diminutive_probability(word, segment):
     return probability
 
 
-def is_diminutive(word, segments):
+def is_diminutive(word, segments, allows_rerun=True):
     """
     Diminutive recognition
 
@@ -301,7 +330,7 @@ def is_diminutive(word, segments):
     probability_sum = 0
 
     for segment in segments:
-        probability_sum += diminutive_probability(word, segment)
+        probability_sum += diminutive_probability(word, segment, allows_rerun)
 
     probability = probability_sum / len(segments)
     if probability > DIMINUTIVE_PROBABILITY_TRESHOLD:
