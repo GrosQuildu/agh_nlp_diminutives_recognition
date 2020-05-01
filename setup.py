@@ -18,7 +18,7 @@ setup(
     },
     entry_points={
         'console_scripts': [
-            'rozpoznawaczek = rozpoznawaczek:main'
+            'rozpoznawaczek = rozpoznawaczek.rozpoznawaczek:main'
         ]
     }
 )
