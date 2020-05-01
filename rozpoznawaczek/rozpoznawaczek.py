@@ -5,11 +5,12 @@
 ~IS, DS, PP
 '''
 
-import morfeusz2  # http://morfeusz.sgjp.pl/download/
-from random import randint
+import logging
 import sys
 from collections import defaultdict
-import logging
+
+# http://morfeusz.sgjp.pl/download/
+import morfeusz2  # type: ignore
 
 logging.basicConfig(format='%(message)s')
 L = logging.getLogger(__name__)
@@ -65,7 +66,7 @@ GRAM_CATEGORY = defaultdict(lambda: 'nieznane', {
     'm2':      'rodzaj',          # męski zwierzęcy
     'm3':      'rodzaj',          # męski rzeczowy
     'f':       'rodzaj',          # żeński
-    'n':      'rodzaj',          # nijaki, TODO niepewne
+    'n':      'rodzaj',           # nijaki, TODO niepewne
     'n1':      'rodzaj',          # nijaki zbiorowy
     'n2':      'rodzaj',          # nijaki zwykły
     'p1':      'rodzaj',          # przymnogi osobowy
@@ -96,25 +97,33 @@ GRAM_CATEGORY = defaultdict(lambda: 'nieznane', {
     'pt':      'przyrodzaj',      # zbiorowy plurale tantum
 })
 
+# fmt: on
 
 # Paulina Biały – Polish and English Diminutives in Literary Translation: Pragmatic and Cross-Cultural Perspectives
 # Długosz - nouns
-suf_dlugosz_noun_masculine = {'ak', 'ek', 'uszek', 'aszek', 'ątek', 'ik', 'yk', 'czyk'}
-suf_dlugosz_noun_feminine = {'ka', 'eczka', 'yczka', 'ułka', 'uszka', 'etka', 'eńka'}
-suf_dlugosz_noun_neuter = {'ko', 'eczko', 'eńko', 'etko', 'uszko', 'onko', 'ątko', 'ączko'}
-suf_dlugosz_noun_plural_and_plurale_tantum = {'ki', 'iki', 'yki', 'iczki', 'uszki', 'ka', 'eczka'}
+suf_dlugosz_noun_masculine = {'ak', 'ek',
+                              'uszek', 'aszek', 'ątek', 'ik', 'yk', 'czyk'}
+suf_dlugosz_noun_feminine = {'ka', 'eczka',
+                             'yczka', 'ułka', 'uszka', 'etka', 'eńka'}
+suf_dlugosz_noun_neuter = {'ko', 'eczko', 'eńko',
+                           'etko', 'uszko', 'onko', 'ątko', 'ączko'}
+suf_dlugosz_noun_plural_and_plurale_tantum = {
+    'ki', 'iki', 'yki', 'iczki', 'uszki', 'ka', 'eczka'}
 suf_dlugosz_noun_other = {'iszek'}
 
 # Grzegorczykowa and Puzynina, Dobrzyński, Kaczorowska - nounts
-suf_gpdk_noun = {'a', 'aś', 'cia', 'cio', 'eniek', 'ina', 'isia', 'ysia', 'nia', 'onek', 'sia', 'sio', 'siu', 'uchna', 'uchno', 'uchny', 'ula', 'ulek', 'ulo', 'alek', 'unia', 'unio', 'uń', 'usia', 'usio', 'usiek', 'uś', 'inka', 'ynka', 'aczek'}
+suf_gpdk_noun = {'a', 'aś', 'cia', 'cio', 'eniek', 'ina', 'isia', 'ysia', 'nia', 'onek', 'sia', 'sio', 'siu', 'uchna',
+                 'uchno', 'uchny', 'ula', 'ulek', 'ulo', 'alek', 'unia', 'unio', 'uń', 'usia', 'usio', 'usiek', 'uś', 'inka', 'ynka', 'aczek'}
 suf_gpdk_noun.add('isko')  # Kreja
 
 # Grzegorczykowa - adjectives
-suf_grzeg_adjectives = {'utki', 'uteńki', 'usieńki', 'uchny', 'uśki', 'eńki', 'usi', 'uteczki', 'utenieczki', 'usienieczki'}
+suf_grzeg_adjectives = {'utki', 'uteńki', 'usieńki', 'uchny',
+                        'uśki', 'eńki', 'usi', 'uteczki', 'utenieczki', 'usienieczki'}
 suf_grzeg_adjectives.add('awy')  # Szymanek
 
 # Paweł Miczko - general
-suf_miczko_general = {'czek', 'szek', 'szki', 'czyk', 'czko', 'eńki', 'sio', 'sia', 'utka', 'utko', 'ątko', 'ątka', 'ula', 'uchna', 'uś', 'unia', 'unio', 'ulka', 'utki', 'ik', 'yk', 'eńko', 'uchny'}
+suf_miczko_general = {'czek', 'szek', 'szki', 'czyk', 'czko', 'eńki', 'sio', 'sia', 'utka', 'utko',
+                      'ątko', 'ątka', 'ula', 'uchna', 'uś', 'unia', 'unio', 'ulka', 'utki', 'ik', 'yk', 'eńko', 'uchny'}
 
 
 DIMINUTIVE_PROBABILITY_TRESHOLD = 0.5
@@ -150,20 +159,23 @@ def diminutive_probability(word, segment):
 
     Args:
         word(str)
-        segments(tuple(start_segment, end_segment, morfology interpretation))
+        segment(tuple(start_segment, end_segment, morfology interpretation))
 
     Returns:
         bool
     """
     _, _, word_morfology = segment
     text_form, lemma, morfology_marker, ordinariness, stylistic_qualifiers = word_morfology
-    L.debug('Probability for `%s` (%s, %s, %s)', word, text_form, lemma, morfology_marker)
+    L.debug('Probability for `%s` (%s, %s, %s)',
+            word, text_form, lemma, morfology_marker)
 
     # find word's part of speech
     is_noun = False
     is_adjective = False
     is_unknown = False
-    marker = morfology_marker.split(':')[0]  # (TODO, część mowy zawsze jest jako pierwsza?)
+
+    # (TODO, część mowy zawsze jest jako pierwsza?)
+    marker = morfology_marker.split(':')[0]
     if GRAM_FLEX[marker] == 'rzeczownik':
         is_noun = True
     if GRAM_FLEX[marker] == 'przymiotnik':
@@ -227,17 +239,20 @@ def diminutive_probability(word, segment):
                 # przymnogi (TODO, czyli jakby mnogi?)
                 elif gender.startswith('p'):
                     L.debug('        -> rodzaj przymnogi')
-                    suffixes_to_check.update(suf_dlugosz_noun_plural_and_plurale_tantum)
+                    suffixes_to_check.update(
+                        suf_dlugosz_noun_plural_and_plurale_tantum)
 
         # liczba mnoga
         elif gramm_number:
             L.debug('        -> liczba mnoga')
-            suffixes_to_check.update(suf_dlugosz_noun_plural_and_plurale_tantum)
+            suffixes_to_check.update(
+                suf_dlugosz_noun_plural_and_plurale_tantum)
 
         # plurale tantum (TODO, nie wiem co to "plurale tantum" :D)
         if subgender == 'pt':
             L.debug('        -> plurale tantum')
-            suffixes_to_check.update(suf_dlugosz_noun_plural_and_plurale_tantum)
+            suffixes_to_check.update(
+                suf_dlugosz_noun_plural_and_plurale_tantum)
 
         number_of_checks += 1
         if has_diminutive_suffix(lemma, suffixes_to_check):
