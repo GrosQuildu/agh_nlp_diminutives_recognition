@@ -5,6 +5,7 @@
 ~IS, DS, PP
 '''
 
+import argparse
 import logging
 import sys
 from collections import defaultdict
@@ -126,7 +127,7 @@ suf_miczko_general = {'czek', 'szek', 'szki', 'czyk', 'czko', 'eńki', 'sio', 's
                       'ątko', 'ątka', 'ula', 'uchna', 'uś', 'unia', 'unio', 'ulka', 'utki', 'ik', 'yk', 'eńko', 'uchny'}
 
 
-DIMINUTIVE_PROBABILITY_TRESHOLD = 0.5
+DIMINUTIVE_PROBABILITY_TRESHOLD = 0.4
 
 
 def has_diminutive_suffix(word, suffixes):
@@ -304,7 +305,7 @@ def is_diminutive(word, segments):
     return False
 
 
-def parse_text(text, is_diminutive_func):
+def parse_text(text):
     """
     1. Tokenize (split to a list of words) the text
     2. Lemmatise (find base forms) every token/word.
@@ -313,8 +314,6 @@ def parse_text(text, is_diminutive_func):
 
     Args:
         text(str)
-        is_diminutive_func(callable)
-            input: tuple(word as string, `morf.analyse` output)
 
     Returns:
         list(tuple(int, int)) - list with start and end position of diminutives
@@ -388,7 +387,7 @@ def parse_text(text, is_diminutive_func):
         # invariant: (position_in_text, end_position_in_text) matches one word
 
         # is diminutive?
-        if is_diminutive_func(text[position_in_text:end_position_in_text], segments):
+        if is_diminutive(text[position_in_text:end_position_in_text], segments):
             diminutives.append((position_in_text, end_position_in_text))
 
         # update positions in the text
@@ -411,22 +410,62 @@ def parse_text(text, is_diminutive_func):
 
 
 def main():
-    # read text line by line
-    while True:
-        text = sys.stdin.readline()
+    # cmd line args
+    parser = argparse.ArgumentParser(description='Recognise diminutives')
+    parser.add_argument(
+        '-f', '--file',
+        help='Load text from a file')
+    parser.add_argument("-v", "--verbose", help="debug output",
+                        action="store_true")
+
+    # args parsing and sanity checks
+    args = parser.parse_args()
+
+    L.setLevel('INFO')
+    if args.verbose:
+        L.setLevel('DEBUG')
+
+    if args.file:
+        try:
+            with open(args.file, 'r') as f:
+                text = f.read()
+        except Exception as e:
+            L.error('Error reading file `%s`: %s', args.file, e)
+            sys.exit(1)
+
         if not text:
-            break
+            L.error('Did not read anything')
+            sys.exit(1)
 
         # find diminutives
-        print(f'line: {repr(text)}')
-        diminutives = parse_text(text, is_diminutive)
-
+        diminutives = parse_text(text)
+        
         # print them
-        for diminutive in diminutives:
-            start_position, end_position = diminutive
-            print(f'd: {text[start_position:end_position]}')
+        if diminutives:
+            print('Diminutives:')
+            for diminutive in diminutives:
+                start_position, end_position = diminutive
+                print(f'- {repr(text[start_position:end_position])}')
+
+    else:
+        # read text line by line
+        while True:
+            text = sys.stdin.readline()
+            if not text:
+                break
+
+            # find diminutives
+            text = text[:-1]  # remove newline
+            print(f'Parsing line: {repr(text)}')
+            diminutives = parse_text(text)
+
+            # print them
+            if diminutives:
+                print('Diminutives:')
+                for diminutive in diminutives:
+                    start_position, end_position = diminutive
+                    print(f'- {repr(text[start_position:end_position])}')
 
 
 if __name__ == "__main__":
-    L.setLevel('INFO')
     main()

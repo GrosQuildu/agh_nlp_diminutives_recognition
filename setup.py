@@ -14,11 +14,11 @@ setup(
     author_email='e2.8a.95@gmail.com',
     install_requires=[''],
     extras_require={
-        'dev': ['isort', 'mypy', 'pyflakes', 'autopep8']
+        'dev': ['isort', 'mypy', 'pyflakes', 'autopep8', 'pytest']
     },
     entry_points={
         'console_scripts': [
-            'rozpoznawaczek = rozpoznawaczek.rozpoznawaczek:main'
+            'rozpoznawaczek = rozpoznawaczek:main'
         ]
     }
 )
