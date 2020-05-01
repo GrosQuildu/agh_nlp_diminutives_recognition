@@ -167,6 +167,10 @@ def diminutive_probability(word, segment):
     """
     _, _, word_morfology = segment
     text_form, lemma, morfology_marker, ordinariness, stylistic_qualifiers = word_morfology
+
+    # "rozpodabniacze", because words can have completely different meanings
+    lemma = lemma.split(':')[0]
+
     L.debug('Probability for `%s` (%s, %s, %s)',
             word, text_form, lemma, morfology_marker)
 
@@ -279,7 +283,7 @@ def diminutive_probability(word, segment):
     probability = 0
     if number_of_checks != 0:
         probability = float(number_of_matches) / number_of_checks
-    L.debug('    -> %f', probability)
+    L.debug('    -> probability: %f', probability)
     return probability
 
 
@@ -308,8 +312,8 @@ def is_diminutive(word, segments):
 def parse_text(text):
     """
     1. Tokenize (split to a list of words) the text
-    2. Lemmatise (find base forms) every token/word.
-    3. Check every word (as a list of lemmas) if it's a diminutive
+    2. Lemmatise (find possible base forms) every token/word
+    3. Check every word (with the list of possible lemmas) if it's a diminutive
     4. Returns list of start and end positions of diminutive words
 
     Args:
