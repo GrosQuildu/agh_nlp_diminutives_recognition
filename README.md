@@ -51,16 +51,16 @@ Diminutives:
 2. Lemmatise (find possible base forms) every token/word
 3. Check every word (with the list of possible lemmas) if it's a diminutive
 
-    3.1. For every possible lemma of the word compute probability of the lemma being a diminutive
-    
-        3.1.1. Find what part of speech the lemma is (nount, adjective, unknown, something other)
-        3.1.2. If "something other" return 0
-        3.1.3. Else choose appropriate sets of suffixes
-        3.1.4. For every such set check if the lemma "matches": ends with any suffix from the set
-        3.1.5. Return probability as number of "matching" sets divided by number of selected sets
-    
-    3.2. Compute mean probability from all lemmas probabilities
-    3.3. Check if the mean is greater than hardcoded treshold 
+  3.1. For every possible lemma of the word compute probability of the word being a diminutive
+  
+      3.1.1. Find what part of speech the word is (nount, adjective, unknown, something other)
+      3.1.2. If "something other" return 0
+      3.1.3. Else choose appropriate sets of suffixes
+      3.1.4. For every such set check if the lemma (or word) "matches": ends with any suffix from the set
+      3.1.5. Return probability as a number of "matching" sets divided by a number of selected sets
+
+  3.2. Compute mean probability from all lemmas probabilities
+  3.3. Check if the mean is greater than hardcoded treshold 
 
 ## Build'n'run
 
