@@ -79,7 +79,7 @@ cd agh_nlp_diminutives_recognition
 
 # install morfeusz2 for your environment: http://morfeusz.sgjp.pl/download/
 
-pip install rozpoznawaczek -e '.[dev]'
+pip install -e .[dev]
 python -m pytest --log-cli-level=INFO ./tests/test.py
 ```
 
