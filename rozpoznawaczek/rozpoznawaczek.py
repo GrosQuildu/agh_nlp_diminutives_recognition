@@ -1,12 +1,10 @@
-#!/usr/bin/env python
+# !/usr/bin/env python
 # -*- coding: utf-8 -*-
 """Tool for recognizing diminutives in a text.
-
     Example:
     L.setLevel('INFO')
     text = 'A potem gorzki los tych niewiniątek\nWiędnąć na włosach i sercach dziewczątek;'
     print([text[start:end] for start, end in find_diminutives(text)])
-
     Authors:
     * Izabela Stechnij
     * Dominik Sepioło
@@ -29,90 +27,88 @@ morfeusz_analyser = morfeusz2.Morfeusz(whitespace=morfeusz2.KEEP_WHITESPACES)
 Interpretation = Tuple[int, int, Tuple[str, str, str, List[str], List[str]]]
 IsDiminutiveFunc = Callable[[str, List[Interpretation]], bool]
 
-
 logging.basicConfig(format='%(message)s')
 L = logging.getLogger(__name__)
 
-
 # http://www.ipipan.waw.pl/~wolinski/publ/znakowanie.pdf
 GRAM_FLEX = defaultdict(lambda: 'nieznane', {
-    'subst':   'rzeczownik',   #
-    'depr':    'rzeczownik',   # forma deprecjatywna
-    'adj':     'przymiotnik',  # 
-    'adja':    'przymiotnik',  # przymiotnik przyprzymiotnikowy
-    'adjp':    'przymiotnik',  # przymiotnik poprzyimkowy
-    'adv':     'przyslowek',   # przysłówek odprzymiotnikowy i/lub stopniowalny
-    'num':     'przymiotnik',  # liczebnik
-    'ppron12': 'zaimek',       # nietrzecioosobowy
-    'ppron3':  'zaimek',       # trzecioosobowy
-    'siebie':  'siebie',       # magiczne słowo "siebie"
-    'fin':     'czasownik',    # forma nieprzeszła
-    'bedzie':  'czasownik',    # forma przyszła czasownika 
-    'aglt':    'czasownik',    # aglutynant czasownika "być"
-    'praet':   'czasownik',    # pseudoimiesłów
-    'impt':    'czasownik',    # rozkaźnik
-    'imps':    'czasownik',    # bezosobnik
-    'inf':     'czasownik',    # bezokolicznik
-    'pcon':    'czasownik',    # imiesłów przys. współczesny
-    'pant':    'czasownik',    # imiesłów przys. uprzedni
-    'ger':     'czasownik',    # odsłownik
-    'pact':    'czasownik',    # imiesłów przym. czynny
-    'ppas':    'czasownik',    # imiesłów przym. bierny
-    'winien':  'winien',       # potężne słowo "winien"
-    'pred':    'predykatyw',   #
-    'prep':    'przyimek',     #
-    'conj':    'spójnik',      #
-    'qub':     'kublik',       # partykuło-przysłówek
-    'xxs':     'obce',         # ciało obce nominalne
-    'xxx':     'obce',         # ciało obce luźne
-    'sp':      'separator',    # whitespace, spacja itp
-    'interp':  'separator',    # kropki itp
-    'ign':     'nieznane',     # nie wiadomo, nie wiaaaadooomooo...
+    'subst': 'rzeczownik',  #
+    'depr': 'rzeczownik',  # forma deprecjatywna
+    'adj': 'przymiotnik',  #
+    'adja': 'przymiotnik',  # przymiotnik przyprzymiotnikowy
+    'adjp': 'przymiotnik',  # przymiotnik poprzyimkowy
+    'adv': 'przyslowek',  # przysłówek odprzymiotnikowy i/lub stopniowalny
+    'num': 'przymiotnik',  # liczebnik
+    'ppron12': 'zaimek',  # nietrzecioosobowy
+    'ppron3': 'zaimek',  # trzecioosobowy
+    'siebie': 'siebie',  # magiczne słowo "siebie"
+    'fin': 'czasownik',  # forma nieprzeszła
+    'bedzie': 'czasownik',  # forma przyszła czasownika 
+    'aglt': 'czasownik',  # aglutynant czasownika "być"
+    'praet': 'czasownik',  # pseudoimiesłów
+    'impt': 'czasownik',  # rozkaźnik
+    'imps': 'czasownik',  # bezosobnik
+    'inf': 'czasownik',  # bezokolicznik
+    'pcon': 'czasownik',  # imiesłów przys. współczesny
+    'pant': 'czasownik',  # imiesłów przys. uprzedni
+    'ger': 'czasownik',  # odsłownik
+    'pact': 'czasownik',  # imiesłów przym. czynny
+    'ppas': 'czasownik',  # imiesłów przym. bierny
+    'winien': 'winien',  # potężne słowo "winien"
+    'pred': 'predykatyw',  #
+    'prep': 'przyimek',  #
+    'conj': 'spójnik',  #
+    'qub': 'kublik',  # partykuło-przysłówek
+    'xxs': 'obce',  # ciało obce nominalne
+    'xxx': 'obce',  # ciało obce luźne
+    'sp': 'separator',  # whitespace, spacja itp
+    'interp': 'separator',  # kropki itp
+    'ign': 'nieznane',  # nie wiadomo, nie wiaaaadooomooo...
 })
 
 GRAM_CATEGORY = defaultdict(lambda: 'nieznane', {
-    'sg':      'liczba',           # pojedyncza
-    'pl':      'liczba',           # mnoga
-    'nom':     'przypadek',        # mianownik
-    'gen':     'przypadek',        # dopełniacz
-    'dat':     'przypadek',        # celownik
-    'acc':     'przypadek',        # biernik
-    'inst':    'przypadek',        # narzędnik
-    'loc':     'przypadek',        # miejscownik
-    'voc':     'przypadek',        # wołacz
-    'm1':      'rodzaj',           # męski osobowy
-    'm2':      'rodzaj',           # męski zwierzęcy
-    'm3':      'rodzaj',           # męski rzeczowy
-    'f':       'rodzaj',           # żeński
-    'n':      'rodzaj',            # nijaki, TODO niepewne
-    'n1':      'rodzaj',           # nijaki zbiorowy
-    'n2':      'rodzaj',           # nijaki zwykły
-    'p1':      'rodzaj',           # przymnogi osobowy
-    'p2':      'rodzaj',           # przymnogi zwykły
-    'p3':      'rodzaj',           # przymnogi opisowy
-    'pri':     'osoba',            # pierwsza
-    'sec':     'osoba',            # druga
-    'ter':     'osoba',            # trzecia
-    'pos':     'stopień',          # równy
-    'comp':    'stopień',          # wyższy
-    'sup':     'stopień',          # najwyższy
-    'imperf':  'aspekt',           # niedokonany
-    'perf':    'aspekt',           # niedokonany
-    'aff':     'zanegowanie',      # niezanegowana
-    'neg':     'zanegowanie',      # zanegowana
-    'akc':     'akcentowość',      # akcentowana
-    'nakc':    'akcentowość',      # nieakcentowana
-    'praep':   'poprzyimkowość',   # poprzyimkowa
-    'npraep':  'poprzyimkowość',   # niepoprzyimkowa
-    'congr':   'akomodacyjność',   # uzgadniająca
-    'rec':     'akomodacyjność',   # rządząca
-    'agl':     'aglutynacyjność',  # aglutynacyjna
-    'nagl':    'aglutynacyjność',  # nieaglutynacyjna
-    'wok':     'wokaliczność',     # wokaliczna
-    'nwok':    'wokaliczność',     # niewokaliczna
-    'col':     'przyrodzaj',       # zbiorowy
-    'ncol':    'przyrodzaj',       # główny
-    'pt':      'przyrodzaj',       # zbiorowy plurale tantum
+    'sg': 'liczba',  # pojedyncza
+    'pl': 'liczba',  # mnoga
+    'nom': 'przypadek',  # mianownik
+    'gen': 'przypadek',  # dopełniacz
+    'dat': 'przypadek',  # celownik
+    'acc': 'przypadek',  # biernik
+    'inst': 'przypadek',  # narzędnik
+    'loc': 'przypadek',  # miejscownik
+    'voc': 'przypadek',  # wołacz
+    'm1': 'rodzaj',  # męski osobowy
+    'm2': 'rodzaj',  # męski zwierzęcy
+    'm3': 'rodzaj',  # męski rzeczowy
+    'f': 'rodzaj',  # żeński
+    'n': 'rodzaj',  # nijaki, TODO niepewne
+    'n1': 'rodzaj',  # nijaki zbiorowy
+    'n2': 'rodzaj',  # nijaki zwykły
+    'p1': 'rodzaj',  # przymnogi osobowy
+    'p2': 'rodzaj',  # przymnogi zwykły
+    'p3': 'rodzaj',  # przymnogi opisowy
+    'pri': 'osoba',  # pierwsza
+    'sec': 'osoba',  # druga
+    'ter': 'osoba',  # trzecia
+    'pos': 'stopień',  # równy
+    'comp': 'stopień',  # wyższy
+    'sup': 'stopień',  # najwyższy
+    'imperf': 'aspekt',  # niedokonany
+    'perf': 'aspekt',  # niedokonany
+    'aff': 'zanegowanie',  # niezanegowana
+    'neg': 'zanegowanie',  # zanegowana
+    'akc': 'akcentowość',  # akcentowana
+    'nakc': 'akcentowość',  # nieakcentowana
+    'praep': 'poprzyimkowość',  # poprzyimkowa
+    'npraep': 'poprzyimkowość',  # niepoprzyimkowa
+    'congr': 'akomodacyjność',  # uzgadniająca
+    'rec': 'akomodacyjność',  # rządząca
+    'agl': 'aglutynacyjność',  # aglutynacyjna
+    'nagl': 'aglutynacyjność',  # nieaglutynacyjna
+    'wok': 'wokaliczność',  # wokaliczna
+    'nwok': 'wokaliczność',  # niewokaliczna
+    'col': 'przyrodzaj',  # zbiorowy
+    'ncol': 'przyrodzaj',  # główny
+    'pt': 'przyrodzaj',  # zbiorowy plurale tantum
 })
 
 # format with autopep8 from this point
@@ -161,12 +157,10 @@ DIMINUTIVE_PROBABILITY_THRESHOLD = 0.4
 
 def has_diminutive_suffix(word: str, suffixes: Set[str], set_name: Optional[str] = None) -> bool:
     """Checks if the word ends with any of the provided suffixes.
-
     Args:
         word: word to check
         suffixes: set of suffixes to match against
         set_name: name of the set, for debugging
-
     Returns:
         True if the check is successful, False otherwise
     """
@@ -187,10 +181,8 @@ def has_diminutive_suffix(word: str, suffixes: Set[str], set_name: Optional[str]
 
 def diminutive_probability(word: str, interpretation: Interpretation, allows_rerun: bool = True) -> float:
     """Returns probability of the word being diminutive, given its morphological interpretation.
-
-    TODO: weights for sets of suffixes 
+    TODO: weights for sets of suffixes
     TODO: handle suffix combinations
-
     Args:
         word: word to check
         interpretation: one item from morfeusz2.analyse function
@@ -306,14 +298,14 @@ def diminutive_probability(word: str, interpretation: Interpretation, allows_rer
             # run checks for pluralized lemma
             if allows_rerun and lemma.lower() != word.lower():
                 L.debug('    -> re-running checks for lemma!')
-                L.debug('~*'*5)
+                L.debug('~*' * 5)
                 number_of_checks += 1
                 morf = morfeusz2.Morfeusz(
                     whitespace=morfeusz2.SKIP_WHITESPACES)
                 lemma_segments = morf.analyse(lemma)
                 if is_diminutive(lemma, lemma_segments, allows_rerun=False):
                     number_of_matches += 1
-                L.debug('~*'*5)
+                L.debug('~*' * 5)
 
         # Grzegorczykowa and Puzynina, Dobrzyński, Kaczorowska
         number_of_checks += 1
@@ -341,11 +333,9 @@ def diminutive_probability(word: str, interpretation: Interpretation, allows_rer
 
 def is_diminutive(word: str, interpretations: List[Interpretation], **kwargs) -> bool:
     """Checks if the word is diminutive.
-
     Args:
         word: word to check
         interpretations: output of morfeusz2.analyse function, list of segments/nodes/word interpretations
-
     Returns:
         True if the word is diminutive, False otherwise
     """
@@ -362,7 +352,6 @@ def is_diminutive(word: str, interpretations: List[Interpretation], **kwargs) ->
 def find_diminutives(text: str, is_diminutive_func: IsDiminutiveFunc = is_diminutive) \
         -> List[Tuple[int, int]]:
     """Finds diminutives in the text.
-
     1. Tokenize (split to a list of words) the text
     2. Lemmatise (find possible base forms) every token/word
     3. Check every word (with the list of possible lemmas) if it's a diminutive
@@ -373,12 +362,10 @@ def find_diminutives(text: str, is_diminutive_func: IsDiminutiveFunc = is_diminu
             3.1.4. For every such set check if the lemma (or word) "matches": ends with any suffix from the set
             3.1.5. Return probability as a number of "matching" sets divided by a number of selected sets
     4. Returns list of start and end positions of diminutive words
-
     Args:
         text: sequence of words to analyse
         is_diminutive_func: function used to determine if one word is diminutive (given it's
                             morphological interpretation). Defaults to `is_diminutive` from this module
-
     Returns:
         list with start and end positions of diminutives, possibly empty
     """
@@ -396,10 +383,9 @@ def find_diminutives(text: str, is_diminutive_func: IsDiminutiveFunc = is_diminu
          (3, 4, ('babo', 'baba:s2', 'subst:sg:voc:m1', ['nazwa_pospolita'], [])),
          (4, 5, (' ', ' ', 'sp', [], [])),
          (5, 6, ('kurę', 'kura', 'subst:sg:acc:f', ['nazwa_pospolita'], []))]
-
     `i` just iterates over the list, whereas
     `position_in_text` keeps track on original words (f.e. 'miała' + 'ś').
-    
+
     Assumption in this function is that separators (spaces, newlines, dots, commas etc)
     always have only one interpretation (corresponding item in text_analyzed list)
     """
@@ -509,10 +495,16 @@ def main():
 
         # print them
         if diminutives:
+            f = open("diminutives_list.txt", "w")
+            f.write("Diminutives list \n")
+            f.close()
+            f = open("diminutives_list.txt", "a")
             print('Diminutives:')
             for diminutive in diminutives:
                 start_position, end_position = diminutive
                 print(f'- {repr(text[start_position:end_position])}')
+                f.write(f'- {repr(text[start_position:end_position])}\n')
+            f.close()
 
     # handle standard input
     else:
@@ -533,6 +525,9 @@ def main():
                 for diminutive in diminutives:
                     start_position, end_position = diminutive
                     print(f'- {repr(text[start_position:end_position])}')
+
+
+
 
 
 if __name__ == "__main__":
