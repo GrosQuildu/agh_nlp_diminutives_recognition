@@ -1,10 +1,11 @@
-# !/usr/bin/env python
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """Tool for recognizing diminutives in a text.
     Example:
-    L.setLevel('INFO')
-    text = 'A potem gorzki los tych niewiniątek\nWiędnąć na włosach i sercach dziewczątek;'
-    print([text[start:end] for start, end in find_diminutives(text)])
+        > L.setLevel('INFO')
+        > text = 'A potem gorzki los tych niewiniątek\nWiędnąć na włosach i sercach dziewczątek;'
+        > print([text[start:end] for start, end in find_diminutives(text)])
+        ['niewiniątek', 'dziewczątek']
     Authors:
     * Izabela Stechnij
     * Dominik Sepioło
@@ -32,83 +33,83 @@ L = logging.getLogger(__name__)
 
 # http://www.ipipan.waw.pl/~wolinski/publ/znakowanie.pdf
 GRAM_FLEX = defaultdict(lambda: 'nieznane', {
-    'subst': 'rzeczownik',  #
-    'depr': 'rzeczownik',  # forma deprecjatywna
-    'adj': 'przymiotnik',  #
-    'adja': 'przymiotnik',  # przymiotnik przyprzymiotnikowy
-    'adjp': 'przymiotnik',  # przymiotnik poprzyimkowy
-    'adv': 'przyslowek',  # przysłówek odprzymiotnikowy i/lub stopniowalny
-    'num': 'przymiotnik',  # liczebnik
-    'ppron12': 'zaimek',  # nietrzecioosobowy
-    'ppron3': 'zaimek',  # trzecioosobowy
-    'siebie': 'siebie',  # magiczne słowo "siebie"
-    'fin': 'czasownik',  # forma nieprzeszła
-    'bedzie': 'czasownik',  # forma przyszła czasownika 
-    'aglt': 'czasownik',  # aglutynant czasownika "być"
-    'praet': 'czasownik',  # pseudoimiesłów
-    'impt': 'czasownik',  # rozkaźnik
-    'imps': 'czasownik',  # bezosobnik
-    'inf': 'czasownik',  # bezokolicznik
-    'pcon': 'czasownik',  # imiesłów przys. współczesny
-    'pant': 'czasownik',  # imiesłów przys. uprzedni
-    'ger': 'czasownik',  # odsłownik
-    'pact': 'czasownik',  # imiesłów przym. czynny
-    'ppas': 'czasownik',  # imiesłów przym. bierny
-    'winien': 'winien',  # potężne słowo "winien"
-    'pred': 'predykatyw',  #
-    'prep': 'przyimek',  #
-    'conj': 'spójnik',  #
-    'qub': 'kublik',  # partykuło-przysłówek
-    'xxs': 'obce',  # ciało obce nominalne
-    'xxx': 'obce',  # ciało obce luźne
-    'sp': 'separator',  # whitespace, spacja itp
-    'interp': 'separator',  # kropki itp
-    'ign': 'nieznane',  # nie wiadomo, nie wiaaaadooomooo...
+    'subst':   'rzeczownik',   #
+    'depr':    'rzeczownik',   # forma deprecjatywna
+    'adj':     'przymiotnik',  # 
+    'adja':    'przymiotnik',  # przymiotnik przyprzymiotnikowy
+    'adjp':    'przymiotnik',  # przymiotnik poprzyimkowy
+    'adv':     'przyslowek',   # przysłówek odprzymiotnikowy i/lub stopniowalny
+    'num':     'przymiotnik',  # liczebnik
+    'ppron12': 'zaimek',       # nietrzecioosobowy
+    'ppron3':  'zaimek',       # trzecioosobowy
+    'siebie':  'siebie',       # magiczne słowo "siebie"
+    'fin':     'czasownik',    # forma nieprzeszła
+    'bedzie':  'czasownik',    # forma przyszła czasownika 
+    'aglt':    'czasownik',    # aglutynant czasownika "być"
+    'praet':   'czasownik',    # pseudoimiesłów
+    'impt':    'czasownik',    # rozkaźnik
+    'imps':    'czasownik',    # bezosobnik
+    'inf':     'czasownik',    # bezokolicznik
+    'pcon':    'czasownik',    # imiesłów przys. współczesny
+    'pant':    'czasownik',    # imiesłów przys. uprzedni
+    'ger':     'czasownik',    # odsłownik
+    'pact':    'czasownik',    # imiesłów przym. czynny
+    'ppas':    'czasownik',    # imiesłów przym. bierny
+    'winien':  'winien',       # potężne słowo "winien"
+    'pred':    'predykatyw',   #
+    'prep':    'przyimek',     #
+    'conj':    'spójnik',      #
+    'qub':     'kublik',       # partykuło-przysłówek
+    'xxs':     'obce',         # ciało obce nominalne
+    'xxx':     'obce',         # ciało obce luźne
+    'sp':      'separator',    # whitespace, spacja itp
+    'interp':  'separator',    # kropki itp
+    'ign':     'nieznane',     # nie wiadomo, nie wiaaaadooomooo...
 })
 
 GRAM_CATEGORY = defaultdict(lambda: 'nieznane', {
-    'sg': 'liczba',  # pojedyncza
-    'pl': 'liczba',  # mnoga
-    'nom': 'przypadek',  # mianownik
-    'gen': 'przypadek',  # dopełniacz
-    'dat': 'przypadek',  # celownik
-    'acc': 'przypadek',  # biernik
-    'inst': 'przypadek',  # narzędnik
-    'loc': 'przypadek',  # miejscownik
-    'voc': 'przypadek',  # wołacz
-    'm1': 'rodzaj',  # męski osobowy
-    'm2': 'rodzaj',  # męski zwierzęcy
-    'm3': 'rodzaj',  # męski rzeczowy
-    'f': 'rodzaj',  # żeński
-    'n': 'rodzaj',  # nijaki, TODO niepewne
-    'n1': 'rodzaj',  # nijaki zbiorowy
-    'n2': 'rodzaj',  # nijaki zwykły
-    'p1': 'rodzaj',  # przymnogi osobowy
-    'p2': 'rodzaj',  # przymnogi zwykły
-    'p3': 'rodzaj',  # przymnogi opisowy
-    'pri': 'osoba',  # pierwsza
-    'sec': 'osoba',  # druga
-    'ter': 'osoba',  # trzecia
-    'pos': 'stopień',  # równy
-    'comp': 'stopień',  # wyższy
-    'sup': 'stopień',  # najwyższy
-    'imperf': 'aspekt',  # niedokonany
-    'perf': 'aspekt',  # niedokonany
-    'aff': 'zanegowanie',  # niezanegowana
-    'neg': 'zanegowanie',  # zanegowana
-    'akc': 'akcentowość',  # akcentowana
-    'nakc': 'akcentowość',  # nieakcentowana
-    'praep': 'poprzyimkowość',  # poprzyimkowa
-    'npraep': 'poprzyimkowość',  # niepoprzyimkowa
-    'congr': 'akomodacyjność',  # uzgadniająca
-    'rec': 'akomodacyjność',  # rządząca
-    'agl': 'aglutynacyjność',  # aglutynacyjna
-    'nagl': 'aglutynacyjność',  # nieaglutynacyjna
-    'wok': 'wokaliczność',  # wokaliczna
-    'nwok': 'wokaliczność',  # niewokaliczna
-    'col': 'przyrodzaj',  # zbiorowy
-    'ncol': 'przyrodzaj',  # główny
-    'pt': 'przyrodzaj',  # zbiorowy plurale tantum
+    'sg':      'liczba',           # pojedyncza
+    'pl':      'liczba',           # mnoga
+    'nom':     'przypadek',        # mianownik
+    'gen':     'przypadek',        # dopełniacz
+    'dat':     'przypadek',        # celownik
+    'acc':     'przypadek',        # biernik
+    'inst':    'przypadek',        # narzędnik
+    'loc':     'przypadek',        # miejscownik
+    'voc':     'przypadek',        # wołacz
+    'm1':      'rodzaj',           # męski osobowy
+    'm2':      'rodzaj',           # męski zwierzęcy
+    'm3':      'rodzaj',           # męski rzeczowy
+    'f':       'rodzaj',           # żeński
+    'n':      'rodzaj',            # nijaki, TODO niepewne
+    'n1':      'rodzaj',           # nijaki zbiorowy
+    'n2':      'rodzaj',           # nijaki zwykły
+    'p1':      'rodzaj',           # przymnogi osobowy
+    'p2':      'rodzaj',           # przymnogi zwykły
+    'p3':      'rodzaj',           # przymnogi opisowy
+    'pri':     'osoba',            # pierwsza
+    'sec':     'osoba',            # druga
+    'ter':     'osoba',            # trzecia
+    'pos':     'stopień',          # równy
+    'comp':    'stopień',          # wyższy
+    'sup':     'stopień',          # najwyższy
+    'imperf':  'aspekt',           # niedokonany
+    'perf':    'aspekt',           # niedokonany
+    'aff':     'zanegowanie',      # niezanegowana
+    'neg':     'zanegowanie',      # zanegowana
+    'akc':     'akcentowość',      # akcentowana
+    'nakc':    'akcentowość',      # nieakcentowana
+    'praep':   'poprzyimkowość',   # poprzyimkowa
+    'npraep':  'poprzyimkowość',   # niepoprzyimkowa
+    'congr':   'akomodacyjność',   # uzgadniająca
+    'rec':     'akomodacyjność',   # rządząca
+    'agl':     'aglutynacyjność',  # aglutynacyjna
+    'nagl':    'aglutynacyjność',  # nieaglutynacyjna
+    'wok':     'wokaliczność',     # wokaliczna
+    'nwok':    'wokaliczność',     # niewokaliczna
+    'col':     'przyrodzaj',       # zbiorowy
+    'ncol':    'przyrodzaj',       # główny
+    'pt':      'przyrodzaj',       # zbiorowy plurale tantum
 })
 
 # format with autopep8 from this point
@@ -331,6 +332,22 @@ def diminutive_probability(word: str, interpretation: Interpretation, allows_rer
     return probability
 
 
+def is_diminutive_probability(word: str, interpretations: List[Interpretation], **kwargs) -> float:
+    """Finds probability of the word being diminutive.
+    Args:
+        word: word to check
+        interpretations: output of morfeusz2.analyse function, list of segments/nodes/word interpretations
+    Returns:
+        Float representing the probability
+    """
+    probability_sum = 0.0
+    for segment in interpretations:
+        probability_sum += diminutive_probability(word, segment, **kwargs)
+
+    probability = probability_sum / len(interpretations)
+    return probability
+
+
 def is_diminutive(word: str, interpretations: List[Interpretation], **kwargs) -> bool:
     """Checks if the word is diminutive.
     Args:
@@ -339,14 +356,7 @@ def is_diminutive(word: str, interpretations: List[Interpretation], **kwargs) ->
     Returns:
         True if the word is diminutive, False otherwise
     """
-    probability_sum = 0.0
-    for segment in interpretations:
-        probability_sum += diminutive_probability(word, segment, **kwargs)
-
-    probability = probability_sum / len(interpretations)
-    if probability > DIMINUTIVE_PROBABILITY_THRESHOLD:
-        return True
-    return False
+    return is_diminutive_probability(word, interpretations, **kwargs) > DIMINUTIVE_PROBABILITY_THRESHOLD
 
 
 def find_diminutives(text: str, is_diminutive_func: IsDiminutiveFunc = is_diminutive) \
@@ -525,9 +535,6 @@ def main():
                 for diminutive in diminutives:
                     start_position, end_position = diminutive
                     print(f'- {repr(text[start_position:end_position])}')
-
-
-
 
 
 if __name__ == "__main__":
