@@ -12,13 +12,14 @@ setup(
     url='https://github.com/GrosQuildu/agh_nlp_diminutives_recognition',
     author='Izabela Stechnij, Dominik Sepioło, Paweł Płatek',
     author_email='e2.8a.95@gmail.com',
-    install_requires=[''],
+    install_requires=['python-docx'],
     extras_require={
         'dev': ['isort', 'mypy', 'pyflakes', 'autopep8', 'pytest']
     },
     entry_points={
         'console_scripts': [
-            'rozpoznawaczek = rozpoznawaczek:main'
+            'rozpoznawaczek = rozpoznawaczek.rozpoznawaczek:main',
+            'rozpoznawaczek-docx = rozpoznawaczek.docx_highlight:main'
         ]
     }
 )

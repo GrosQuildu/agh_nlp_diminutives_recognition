@@ -379,7 +379,11 @@ def find_diminutives(text: str, is_diminutive_func: IsDiminutiveFunc = is_diminu
     Returns:
         list with start and end positions of diminutives, possibly empty
     """
-    text_analyzed = morfeusz_analyser.analyse(text)
+    try:
+        text_analyzed = morfeusz_analyser.analyse(text)
+    except TypeError as e:
+        L.error('Error, probably passed bytes instead of a string.')
+        raise e
 
     position_in_text = 0  # position in input text (string)
     i = 0  # position in analyzed text (list)
