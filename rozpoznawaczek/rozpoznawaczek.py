@@ -479,7 +479,7 @@ def main():
     # cmd line args
     parser = argparse.ArgumentParser(description='Recognise diminutives')
     parser.add_argument(
-        '-f', '--file',
+        '-i', '--input',
         help='Load text from a file')
     parser.add_argument("-v", "--verbose", help="debug output",
                         action="store_true")
@@ -492,12 +492,12 @@ def main():
         L.setLevel('DEBUG')
 
     # handle file
-    if args.file:
+    if args.input:
         try:
-            with open(args.file, 'r') as f:
+            with open(args.input, 'r') as f:
                 text = f.read()
         except Exception as e:
-            L.error('Error reading file `%s`: %s', args.file, e)
+            L.error('Error reading file `%s`: %s', args.input, e)
             sys.exit(1)
 
         if not text:

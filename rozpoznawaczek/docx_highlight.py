@@ -13,13 +13,12 @@
 import argparse
 from os.path import isfile
 
-from docx.enum.text import WD_COLOR_INDEX
-from docx.shared import RGBColor
-from docx import Document
-from copy import copy
+from docx import Document  # type: ignore
+from docx.enum.text import WD_COLOR_INDEX  # type: ignore
+from docx.exceptions import PythonDocxError  # type: ignore
 
-#from rozpoznawaczek.rozpoznawaczek import L, find_diminutives
-from rozpoznawaczek import L, find_diminutives # Windows
+from rozpoznawaczek import L, find_diminutives
+
 
 def highlight(document):
     for paragraph in document.paragraphs:
@@ -30,10 +29,14 @@ def highlight(document):
 
             coursor = 0
             for start_position, end_position in diminutives:
-                run.add_text(original_text[coursor:start_position])  # normal text
-                run.add_text(original_text[start_position:end_position])  # diminutive
+                # normal text
+                run.add_text(original_text[coursor:start_position])
+                # diminutive
+                run.add_text(original_text[start_position:end_position])
                 coursor = end_position
-            run.add_text(original_text[coursor:len(original_text)])  # normal text
+
+            # normal text
+            run.add_text(original_text[coursor:len(original_text)])
             if diminutives:
                 run.font.highlight_color = WD_COLOR_INDEX.YELLOW
 
