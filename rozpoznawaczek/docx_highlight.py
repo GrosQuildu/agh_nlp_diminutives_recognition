@@ -18,8 +18,8 @@ from docx.shared import RGBColor
 from docx import Document
 from copy import copy
 
-from rozpoznawaczek.rozpoznawaczek import L, find_diminutives
-
+#from rozpoznawaczek.rozpoznawaczek import L, find_diminutives
+from rozpoznawaczek import L, find_diminutives # Windows
 
 def highlight(document):
     for paragraph in document.paragraphs:
@@ -34,6 +34,8 @@ def highlight(document):
                 run.add_text(original_text[start_position:end_position])  # diminutive
                 coursor = end_position
             run.add_text(original_text[coursor:len(original_text)])  # normal text
+            if diminutives:
+                run.font.highlight_color = WD_COLOR_INDEX.YELLOW
 
     return document
 
