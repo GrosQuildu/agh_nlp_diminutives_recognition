@@ -14,8 +14,10 @@
 
 import argparse
 import logging
+import signal
 import sys
 from collections import defaultdict
+from sys import exit
 from typing import Callable, List, Optional, Set, Tuple
 
 # http://morfeusz.sgjp.pl/download/
@@ -30,6 +32,11 @@ IsDiminutiveFunc = Callable[[str, List[Interpretation]], bool]
 
 logging.basicConfig(format='%(message)s')
 L = logging.getLogger(__name__)
+
+def interrupt_handler(sig, frame):
+    print('Exit')
+    exit(0)
+signal.signal(signal.SIGINT, interrupt_handler)
 
 # http://www.ipipan.waw.pl/~wolinski/publ/znakowanie.pdf
 GRAM_FLEX = defaultdict(lambda: 'nieznane', {
@@ -474,6 +481,16 @@ def find_diminutives(text: str, is_diminutive_func: IsDiminutiveFunc = is_diminu
     return diminutives
 
 
+def print_diminutives(text: str, diminutives: List[Tuple[int, int]]):
+    if diminutives:
+        print('Diminutives:')
+        for diminutive in diminutives:
+            start_position, end_position = diminutive
+            print(f'- {repr(text[start_position:end_position])}')
+    else:
+        print('No diminutives.')
+
+
 def main():
     """Wrapper for find_diminutives function, supports reading from a file or standard input."""
     # cmd line args
@@ -504,21 +521,8 @@ def main():
             L.error('Did not read anything')
             sys.exit(1)
 
-        # find diminutives
         diminutives = find_diminutives(text)
-
-        # print them
-        if diminutives:
-            f = open("diminutives_list.txt", "w")
-            f.write("Diminutives list \n")
-            f.close()
-            f = open("diminutives_list.txt", "a")
-            print('Diminutives:')
-            for diminutive in diminutives:
-                start_position, end_position = diminutive
-                print(f'- {repr(text[start_position:end_position])}')
-                f.write(f'- {repr(text[start_position:end_position])}\n')
-            f.close()
+        print_diminutives(text, diminutives)
 
     # handle standard input
     else:
@@ -532,13 +536,7 @@ def main():
             text = text[:-1]  # remove newline
             print(f'Parsing line: {repr(text)}')
             diminutives = find_diminutives(text)
-
-            # print them
-            if diminutives:
-                print('Diminutives:')
-                for diminutive in diminutives:
-                    start_position, end_position = diminutive
-                    print(f'- {repr(text[start_position:end_position])}')
+            print_diminutives(text, diminutives)
 
 
 if __name__ == "__main__":

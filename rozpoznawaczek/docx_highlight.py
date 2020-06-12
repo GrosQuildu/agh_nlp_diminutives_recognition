@@ -51,7 +51,7 @@ def main():
         '-o', '--output', help='Output docx file', required=True)
     parser.add_argument(
         '-f', '--force', help='Force output overwrite', action='store_true')
-    parser.add_argument("-v", "--verbose", help="d,ebug output",
+    parser.add_argument("-v", "--verbose", help="debug output",
                         action="store_true")
 
     args = parser.parse_args()
@@ -65,7 +65,7 @@ def main():
         return
 
     if not args.force and isfile(args.output):
-        L.error('File exists: %s', args.output)
+        L.error('File exists: %s. Use -f/--force to overwrite.', args.output)
         return
 
     try:
