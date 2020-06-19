@@ -83,6 +83,8 @@ optional arguments:
   -v, --verbose         debug output
 ```
 
+![Example docx](example.png?raw=true "Example docx")
+
 ## Build'n'run
 
 Docker:
