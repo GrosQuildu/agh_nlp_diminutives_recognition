@@ -11,10 +11,9 @@ setup(
     url='https://github.com/GrosQuildu/agh_nlp_diminutives_recognition',
     author='Izabela Stechnij, Dominik Sepioło, Paweł Płatek',
     author_email='e2.8a.95@gmail.com',
-    # install_requires=['morfeusz2'],  # see http://morfeusz.sgjp.pl/download/
+    install_requires=['python-docx'],  # and 'morfeusz2', see http://morfeusz.sgjp.pl/download/
     extras_require={
-        'DEV': ['isort', 'mypy', 'pyflakes', 'autopep8', 'pytest', 'pyinstaller'],
-        'DOCX': ['python-docx']
+        'DEV': ['isort', 'mypy', 'pyflakes', 'autopep8', 'pytest', 'pyinstaller']
     },
     entry_points={
         'console_scripts': [

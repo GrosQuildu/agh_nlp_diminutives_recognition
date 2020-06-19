@@ -3,13 +3,14 @@
 Tool for recognizing [polish diminutives](https://en.wikipedia.org/wiki/List_of_diminutives_by_language#Polish).
 
 ```sh
-usage: rozpoznawaczek [-h] [-f FILE] [-v]
+usage: rozpoznawaczek [-h] [-i INPUT] [-v]
 
 Recognise diminutives
 
 optional arguments:
   -h, --help            show this help message and exit
-  -f FILE, --file FILE  Load text from a file
+  -i INPUT, --input INPUT
+                        Load text from a file
   -v, --verbose         debug output
 ```
 
@@ -62,6 +63,26 @@ Diminutives:
     
     3.3. Check if the mean is greater than hardcoded threshold 
 
+## Highlighter
+```sh
+usage: rozpoznawaczek-docx [-h] -i INPUT -o OUTPUT [-f]
+                           [-c {AUTO,BLACK,BLUE,BRIGHT_GREEN,DARK_BLUE,...}]
+                           [-v]
+
+Hightlight diminutives in `docx` document
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -i INPUT, --input INPUT
+                        Input docx file
+  -o OUTPUT, --output OUTPUT
+                        Output docx file
+  -f, --force           Force output overwrite
+  -c {AUTO,BLACK,BLUE,,...}, --color {AUTO,BLACK,BLUE,...}
+                        Color to highlight diminutives
+  -v, --verbose         debug output
+```
+
 ## Build'n'run
 
 Docker:
@@ -69,7 +90,14 @@ Docker:
 git clone https://github.com/GrosQuildu/agh_nlp_diminutives_recognition
 cd agh_nlp_diminutives_recognition
 docker build -t rozpoznawaczek .
+
+# run interactive tool
 docker run -it rozpoznawaczek
+
+# to highlight document
+mkdir output && chmod 777 output
+docker run --mount type=bind,source="$(pwd)",target=/nlp -it rozpoznawaczek \
+    rozpoznawaczek-docx -i /nlp/example.docx -o /nlp/output/example.docx -f -c VIOLET
 ```
 
 Local dev:
@@ -79,7 +107,7 @@ cd agh_nlp_diminutives_recognition
 
 # install morfeusz2 for your environment: http://morfeusz.sgjp.pl/download/
 
-pip install -e '.[DEV,DOCX]'
+pip install -e '.[DEV]'
 python -m pytest --log-cli-level=INFO ./tests/test.py
 ```
 

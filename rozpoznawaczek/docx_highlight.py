@@ -66,6 +66,9 @@ def copy_style(new_element, original_element):
 
 
 def highlight(document, color):
+    L.debug('Diminutives:')
+    diminutives_found = 0
+
     for paragraph in document.paragraphs:
         runs = copy(paragraph.runs)
         paragraph.clear()
@@ -73,6 +76,7 @@ def highlight(document, color):
         for run in runs:
             original_text = run.text
             diminutives = find_diminutives(original_text)
+            diminutives_found += len(diminutives)
 
             coursor = 0
             for start_position, end_position in diminutives:
@@ -86,6 +90,7 @@ def highlight(document, color):
                     original_text[start_position:end_position], run.style)
                 copy_style(new_run, run)
                 new_run.font.highlight_color = color
+                L.debug(' - %s', repr(new_run.text))
 
                 coursor = end_position
 
@@ -94,7 +99,7 @@ def highlight(document, color):
                 original_text[coursor:len(original_text)], run.style)
             copy_style(new_run, run)
 
-    return document
+    return document, diminutives_found
 
 
 def main():
@@ -102,7 +107,7 @@ def main():
         WD_COLOR_INDEX) if attr.isupper() and not attr.startswith('_')]
     default_color = 'RED' if 'RED' in colors else colors[-1]
 
-    parser = argparse.ArgumentParser(description='Hightlight diminutives')
+    parser = argparse.ArgumentParser(description='Hightlight diminutives in `docx` document')
     parser.add_argument(
         '-i', '--input', help='Input docx file', required=True)
     parser.add_argument(
@@ -138,7 +143,10 @@ def main():
         L.error('Error when opening input file: %s', e)
         return 1
 
-    highlighted_document = highlight(document, getattr(WD_COLOR_INDEX, args.color))
+    highlighted_document, diminutives_found = highlight(document, getattr(WD_COLOR_INDEX, args.color))
+
+    L.info('Found %d diminutives', diminutives_found)
+    L.info('Saving highlighted document to %s', args.output)
     highlighted_document.save(args.output)
 
 
